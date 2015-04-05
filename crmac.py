@@ -1,10 +1,7 @@
-import urllib
-import urllib2
-import requests
+import sys
 
-
-login_url = 'https://bannerweb.wpi.edu/pls/prod/twbkwbis.P_ValLogin'
-registration_url = 'https://bannerweb.wpi.edu/pls/prod/bwskfreg.P_AltPin'
+from login import login
+from post_crns import post_crns
 
 
 def _headers():
@@ -16,34 +13,6 @@ def _headers():
 	}
 
 
-def post_login(data, s=None):
-    # create a session
-    s = requests.session() if s is None else s
-    def_headers = _headers()
-
-    # get the login page
-    r1 = s.get(login_url,
-        headers=def_headers
-    )
-    # if it didn't work, try again
-    if int(r1.status_code) != 200:
-        return post_login(data, s)
-
-    # post the login credentials
-    r2 = s.post(login_url,
-        data=data,
-        headers=def_headers,
-    )
-    # if it didn't work, try again
-    if int(r2.status_code) != 200:
-        return post_login(data, s)
-    # return the session
-    return s
-
-
-def post_crn(lst):
-    return lst
-
 
 if __name__ == '__main__':
     creds_file = open('secrets','r')
@@ -52,8 +21,7 @@ if __name__ == '__main__':
         'PIN' : creds_file.readline()[:-1]  # ignore newline
     }
     creds_file.close()
-    session = post_login(data)
-    crns = {
-        'term' : ''
-    }
-    post_crn(crns)
+    session, response = login(data, _headers())
+    while response.status_code != 200:
+        session, response = login(data, _headers())
+    post_crns(session, _headers())
